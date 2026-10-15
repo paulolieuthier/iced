@@ -307,29 +307,22 @@ where
                                 // A fullscreen window can name the monitor it
                                 // should take over. Unresolved names fall back
                                 // to the platform default.
-                                let fullscreen_monitor = settings
-                                    .fullscreen_monitor
-                                    .as_deref()
-                                    .and_then(|name| {
-                                        event_loop.available_monitors().find(
-                                            |monitor| {
-                                                monitor.name().as_deref()
-                                                    == Some(name)
-                                            },
-                                        )
+                                let fullscreen_monitor =
+                                    settings.fullscreen_monitor.as_deref().and_then(|name| {
+                                        event_loop
+                                            .available_monitors()
+                                            .find(|monitor| monitor.name().as_deref() == Some(name))
                                     });
 
-                                let window_attributes =
-                                    conversion::window_attributes(
-                                        settings,
-                                        &title,
-                                        scale_factor,
-                                        monitor
-                                            .or(event_loop.primary_monitor()),
-                                        fullscreen_monitor,
-                                        self.id.clone(),
-                                    )
-                                    .with_visible(false);
+                                let window_attributes = conversion::window_attributes(
+                                    settings,
+                                    &title,
+                                    scale_factor,
+                                    monitor.or(event_loop.primary_monitor()),
+                                    fullscreen_monitor,
+                                    self.id.clone(),
+                                )
+                                .with_visible(false);
 
                                 #[cfg(target_arch = "wasm32")]
                                 let window_attributes = {
@@ -414,6 +407,18 @@ where
                                 self.error = Some(error);
                                 event_loop.exit();
                             }
+                            Control::ListMonitors(on_done) => {
+                                let primary = event_loop.primary_monitor();
+
+                                let monitors = event_loop
+                                    .available_monitors()
+                                    .map(|monitor| {
+                                        conversion::monitor_info(monitor, primary.as_ref())
+                                    })
+                                    .collect();
+
+                                let _ = on_done.send(monitors);
+                            }
                             Control::SetAutomaticWindowTabbing(_enabled) => {
                                 #[cfg(target_os = "macos")]
                                 {
@@ -478,6 +483,7 @@ enum Control {
         on_open: oneshot::Sender<window::Id>,
         scale_factor: f32,
     },
+    ListMonitors(oneshot::Sender<Vec<crate::core::window::MonitorInfo>>),
     SetAutomaticWindowTabbing(bool),
 }
 
@@ -1610,6 +1616,11 @@ fn run_action<'a, P, C>(
 
                     let _ = channel.send(size);
                 }
+            }
+            window::Action::GetMonitors(channel) => {
+                control_sender
+                    .start_send(Control::ListMonitors(channel))
+                    .expect("Send control action");
             }
             window::Action::SetAllowAutomaticTabbing(enabled) => {
                 control_sender

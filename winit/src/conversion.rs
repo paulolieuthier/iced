@@ -42,9 +42,11 @@ pub fn window_attributes(
             height: settings.size.height * scale_factor,
         })
         .with_maximized(settings.maximized)
-        .with_fullscreen(settings.fullscreen.then_some(
-            winit::window::Fullscreen::Borderless(fullscreen_monitor),
-        ))
+        .with_fullscreen(
+            settings
+                .fullscreen
+                .then_some(winit::window::Fullscreen::Borderless(fullscreen_monitor)),
+        )
         .with_resizable(settings.resizable)
         .with_enabled_buttons(buttons)
         .with_decorations(settings.decorations)
@@ -142,6 +144,20 @@ pub fn window_attributes(
     }
 
     attributes
+}
+
+/// Converts a [`winit`] monitor handle into a [`window::MonitorInfo`].
+pub fn monitor_info(
+    monitor: winit::monitor::MonitorHandle,
+    primary: Option<&winit::monitor::MonitorHandle>,
+) -> window::MonitorInfo {
+    let size = monitor.size();
+
+    window::MonitorInfo {
+        name: monitor.name(),
+        size: Size::new(size.width as f32, size.height as f32),
+        primary: primary == Some(&monitor),
+    }
 }
 
 /// Converts a winit window event into an iced event.

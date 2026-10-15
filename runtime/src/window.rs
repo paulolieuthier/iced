@@ -1,7 +1,7 @@
 //! Build window-based GUI applications.
 use crate::core::time::Instant;
 use crate::core::window::{
-    Direction, Event, Icon, Id, Level, Mode, Screenshot, Settings, UserAttention,
+    Direction, Event, Icon, Id, Level, Mode, MonitorInfo, Screenshot, Settings, UserAttention,
 };
 use crate::core::{Point, Size, Window};
 use crate::futures::Subscription;
@@ -172,6 +172,9 @@ pub enum Action {
 
     /// Get the logical dimensions of the monitor containing the window with the given [`Id`].
     GetMonitorSize(Id, oneshot::Sender<Option<Size>>),
+
+    /// List every monitor connected to the system.
+    GetMonitors(oneshot::Sender<Vec<MonitorInfo>>),
 
     /// Set whether the system can automatically organize windows into tabs.
     ///
@@ -467,6 +470,14 @@ pub fn disable_mouse_passthrough<Message>(id: Id) -> Task<Message> {
 /// Gets the logical dimensions of the monitor containing the window with the given [`Id`].
 pub fn monitor_size(id: Id) -> Task<Option<Size>> {
     task::oneshot(move |channel| crate::Action::Window(Action::GetMonitorSize(id, channel)))
+}
+
+/// Lists every monitor connected to the system.
+///
+/// Only monitors with a [`MonitorInfo::name`] can be targeted by
+/// [`Settings::fullscreen_monitor`].
+pub fn list_monitors() -> Task<Vec<MonitorInfo>> {
+    task::oneshot(move |channel| crate::Action::Window(Action::GetMonitors(channel)))
 }
 
 /// Sets whether the system can automatically organize windows into tabs.
