@@ -39,7 +39,19 @@ pub struct Settings {
     pub maximized: bool,
 
     /// Whether the window should start fullscreen.
+    ///
+    /// Fullscreen follows the window's current monitor unless
+    /// [`Settings::fullscreen_monitor`] names one.
     pub fullscreen: bool,
+
+    /// The name of the monitor (as the platform reports it, e.g. `"HDMI-A-1"`)
+    /// that a fullscreen window should take over.
+    ///
+    /// `None` keeps the platform default, which is the monitor the window ends
+    /// up on — the only thing most platforms let a client express. Naming a
+    /// monitor is what makes multi-display output possible on Wayland, where a
+    /// client cannot position windows at all.
+    pub fullscreen_monitor: Option<String>,
 
     /// The initial position of the window.
     pub position: Position,
@@ -106,6 +118,7 @@ impl Default for Settings {
             size: Size::new(1024.0, 768.0),
             maximized: false,
             fullscreen: false,
+            fullscreen_monitor: None,
             position: Position::default(),
             min_size: None,
             max_size: None,

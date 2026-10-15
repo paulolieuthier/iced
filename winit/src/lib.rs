@@ -304,14 +304,32 @@ where
                                 #[cfg(target_arch = "wasm32")]
                                 let target = settings.platform_specific.target.clone();
 
-                                let window_attributes = conversion::window_attributes(
-                                    settings,
-                                    &title,
-                                    scale_factor,
-                                    monitor.or(event_loop.primary_monitor()),
-                                    self.id.clone(),
-                                )
-                                .with_visible(false);
+                                // A fullscreen window can name the monitor it
+                                // should take over. Unresolved names fall back
+                                // to the platform default.
+                                let fullscreen_monitor = settings
+                                    .fullscreen_monitor
+                                    .as_deref()
+                                    .and_then(|name| {
+                                        event_loop.available_monitors().find(
+                                            |monitor| {
+                                                monitor.name().as_deref()
+                                                    == Some(name)
+                                            },
+                                        )
+                                    });
+
+                                let window_attributes =
+                                    conversion::window_attributes(
+                                        settings,
+                                        &title,
+                                        scale_factor,
+                                        monitor
+                                            .or(event_loop.primary_monitor()),
+                                        fullscreen_monitor,
+                                        self.id.clone(),
+                                    )
+                                    .with_visible(false);
 
                                 #[cfg(target_arch = "wasm32")]
                                 let window_attributes = {

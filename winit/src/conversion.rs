@@ -16,6 +16,7 @@ pub fn window_attributes(
     title: &str,
     scale_factor: f32,
     primary_monitor: Option<winit::monitor::MonitorHandle>,
+    fullscreen_monitor: Option<winit::monitor::MonitorHandle>,
     _id: Option<String>,
 ) -> winit::window::WindowAttributes {
     let mut attributes = winit::window::WindowAttributes::default();
@@ -41,11 +42,9 @@ pub fn window_attributes(
             height: settings.size.height * scale_factor,
         })
         .with_maximized(settings.maximized)
-        .with_fullscreen(
-            settings
-                .fullscreen
-                .then_some(winit::window::Fullscreen::Borderless(None)),
-        )
+        .with_fullscreen(settings.fullscreen.then_some(
+            winit::window::Fullscreen::Borderless(fullscreen_monitor),
+        ))
         .with_resizable(settings.resizable)
         .with_enabled_buttons(buttons)
         .with_decorations(settings.decorations)
