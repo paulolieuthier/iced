@@ -166,11 +166,23 @@ impl Compositor {
         });
 
         // Request SHADER_F16 only if the adapter supports it (e.g., not available in WebGL2)
-        let required_features = if adapter.features().contains(wgpu::Features::SHADER_F16) {
-            wgpu::Features::SHADER_F16
-        } else {
-            wgpu::Features::empty()
-        };
+        let mut required_features = wgpu::Features::empty();
+
+        if adapter.features().contains(wgpu::Features::SHADER_F16) {
+            required_features |= wgpu::Features::SHADER_F16;
+        }
+
+        // Laudora patch: `Device::as_hal::<Vulkan>()` cannot call
+        // `texture_from_dmabuf_fd` unless the device was created with this
+        // feature; ask for it whenever the driver can import DMA-BUFs. It is
+        // inert everywhere else (no cost, no behavior change on other
+        // backends or drivers).
+        if adapter
+            .features()
+            .contains(wgpu::Features::VULKAN_EXTERNAL_MEMORY_DMA_BUF)
+        {
+            required_features |= wgpu::Features::VULKAN_EXTERNAL_MEMORY_DMA_BUF;
+        }
 
         let mut errors = Vec::new();
 
